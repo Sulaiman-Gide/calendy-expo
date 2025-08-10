@@ -1,7 +1,6 @@
-import 'react-native-url-polyfill/auto';
-import { createClient } from '@supabase/supabase-js';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createClient } from "@supabase/supabase-js";
+import "react-native-url-polyfill/auto";
 
 // Create a custom AsyncStorage adapter for Supabase
 const AsyncStorageAdapter = {
@@ -17,12 +16,14 @@ const AsyncStorageAdapter = {
 };
 
 // Get Supabase URL and anon key from environment variables
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 // Throw an error if Supabase URL or anon key is not set
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase URL or anon key. Please check your environment variables.');
+  throw new Error(
+    "Missing Supabase URL or anon key. Please check your environment variables."
+  );
 }
 
 // Create and export the Supabase client
@@ -37,7 +38,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Helper function to get the current user
 export const getCurrentUser = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   return user;
 };
 

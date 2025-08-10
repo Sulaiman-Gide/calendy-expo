@@ -1,14 +1,44 @@
-import { View, type ViewProps } from 'react-native';
+import React from 'react';
+import { 
+  View, 
+  StyleSheet, 
+  type ViewStyle, 
+  type ViewProps, 
+  type StyleProp 
+} from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
-import { useThemeColor } from '@/hooks/useThemeColor';
-
-export type ThemedViewProps = ViewProps & {
+type ThemedViewProps = ViewProps & {
   lightColor?: string;
   darkColor?: string;
+  style?: StyleProp<ViewStyle>;
 };
 
-export function ThemedView({ style, lightColor, darkColor, ...otherProps }: ThemedViewProps) {
-  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
+export function ThemedView({
+  style,
+  lightColor,
+  darkColor,
+  children,
+  ...props
+}: ThemedViewProps) {
+  const { colors } = useTheme();
+  
+  // Safely get background color with fallbacks
+  const backgroundColor = React.useMemo(() => {
+    return darkColor || lightColor || colors?.background || '#FFFFFF';
+  }, [darkColor, lightColor, colors]);
 
-  return <View style={[{ backgroundColor }, style]} {...otherProps} />;
+  // Create base style
+  const baseStyle = React.useMemo<ViewStyle>(() => ({
+    backgroundColor,
+  }), [backgroundColor]);
+
+  return (
+    <View 
+      style={style ? [baseStyle, style] : baseStyle} 
+      {...props}
+    >
+      {children}
+    </View>
+  );
 }

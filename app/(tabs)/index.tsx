@@ -1,9 +1,11 @@
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useState, useMemo, useContext } from 'react';
 import { StyleSheet, View, FlatList, TouchableOpacity, Platform } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
+import type { Theme as CalendarTheme } from 'react-native-calendars/src/types';
 import { format, addMonths, subMonths, isToday } from 'date-fns';
 import { parseISO } from 'date-fns/fp';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTheme } from '@/context/ThemeContext';
 
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -37,6 +39,7 @@ type Event = {
 };
 
 export default function CalendarScreen() {
+  const { colors } = useTheme();
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [events, setEvents] = useState<Event[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -124,76 +127,102 @@ export default function CalendarScreen() {
     return format(parseISO(dateString), 'h:mm a');
   };
 
+  // Calendar theme configuration
+  const calendarTheme: Partial<CalendarTheme> = {
+    backgroundColor: colors.background,
+    calendarBackground: colors.background,
+    textSectionTitleColor: colors.primary,
+    selectedDayBackgroundColor: colors.primary,
+    selectedDayTextColor: '#ffffff',
+    todayTextColor: colors.primary,
+    dayTextColor: colors.text,
+    textDisabledColor: colors.secondary,
+    dotColor: colors.primary,
+    selectedDotColor: '#ffffff',
+    arrowColor: colors.primary,
+    monthTextColor: colors.text,
+    textDayFontWeight: '400',
+    textMonthFontWeight: 'bold',
+    textDayHeaderFontWeight: '600',
+    textDayFontSize: 14,
+    textMonthFontSize: 20,
+    textDayHeaderFontSize: 12,
+  };
+
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText type="title">
-          {format(currentMonth, 'MMMM yyyy')}
-        </ThemedText>
+    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={styles.calendarContainer}>
+        <Calendar
+          style={[styles.calendar, { backgroundColor: colors.card }]}
+          current={selectedDate}
+          onDayPress={onDayPress}
+          markedDates={markedDates}
+          onMonthChange={onMonthChange}
+          hideExtraDays={false}
+          hideDayNames={false}
+          firstDay={1}
+          theme={calendarTheme}
+          renderHeader={(date) => (
+            <View style={styles.header}>
+              <ThemedText type="title" style={{ color: colors.text }}>
+                {format(parseISO(selectedDate), 'MMMM yyyy')}
+              </ThemedText>
+            </View>
+          )}
+        />
       </View>
       
-      <Calendar
-        style={styles.calendar}
-        current={selectedDate}
-        onDayPress={onDayPress}
-        markedDates={markedDates}
-        onMonthChange={onMonthChange}
-        theme={{
-          backgroundColor: 'transparent',
-          calendarBackground: 'transparent',
-          textSectionTitleColor: '#3b82f6',
-          selectedDayBackgroundColor: '#3b82f6',
-          selectedDayTextColor: '#ffffff',
-          todayTextColor: '#3b82f6',
-          dayTextColor: '#1a1a1a',
-          textDisabledColor: '#d1d5db',
-          dotColor: '#3b82f6',
-          selectedDotColor: '#ffffff',
-          arrowColor: '#3b82f6',
-          monthTextColor: '#1a1a1a',
-          textDayFontWeight: '400',
-          textMonthFontWeight: 'bold',
-          textDayHeaderFontWeight: '600',
-          textDayFontSize: 14,
-          textMonthFontSize: 18,
-          textDayHeaderFontSize: 12,
-        }}
-      />
-      
-      <View style={styles.eventsContainer}>
-        <ThemedText type="subtitle" style={styles.eventsTitle}>
+      <ThemedView style={styles.eventsContainer}>
+        <ThemedText 
+          type="subtitle" 
+          style={[styles.eventsTitle, { color: colors.text }]}
+        >
           {format(parseISO(selectedDate), 'EEEE, MMMM d, yyyy')}
         </ThemedText>
         
         {isLoading ? (
-          <ThemedText>Loading events...</ThemedText>
+          <ThemedText style={{ color: colors.text }}>Loading events...</ThemedText>
         ) : filteredEvents.length > 0 ? (
           <FlatList
             data={filteredEvents}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <View style={[styles.eventItem, { borderLeftColor: item.color || '#3b82f6' }]}>
+              <View 
+                style={[
+                  styles.eventItem, 
+                  { 
+                    backgroundColor: colors.card,
+                    borderLeftColor: item.color || colors.primary,
+                    shadowColor: colors.text === '#f5f5f5' ? '#000' : '#000',
+                  }
+                ]}
+              >
                 <View style={styles.eventTimeContainer}>
-                  <ThemedText style={styles.eventTime}>
+                  <ThemedText style={[styles.eventTime, { color: colors.secondary }]}>
                     {formatTime(item.start_time)}
                     {item.end_time && ` - ${formatTime(item.end_time)}`}
                   </ThemedText>
                 </View>
-                <ThemedText style={styles.eventTitle}>{item.title}</ThemedText>
+                <ThemedText style={[styles.eventTitle, { color: colors.text }]}>
+                  {item.title}
+                </ThemedText>
               </View>
             )}
           />
         ) : (
-          <ThemedText style={styles.noEvents}>No events for this day</ThemedText>
+          <ThemedText style={[styles.noEvents, { color: colors.secondary }]}>
+            No events for this day
+          </ThemedText>
         )}
         
         <TouchableOpacity 
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: colors.primary }]}
           onPress={() => console.log('Add event')}
         >
           <ThemedText style={styles.addButtonText}>+ Add Event</ThemedText>
         </TouchableOpacity>
-      </View>
+      </ThemedView>
+      
     </ThemedView>
   );
 }
@@ -201,17 +230,17 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  calendarContainer: {
     padding: 16,
+    paddingBottom: 8,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
   },
   calendar: {
-    borderRadius: 10,
-    elevation: 4,
+    borderRadius: 15,
     marginBottom: 16,
     ...Platform.select({
       ios: {
@@ -227,20 +256,20 @@ const styles = StyleSheet.create({
   },
   eventsContainer: {
     flex: 1,
+    paddingTop: 8,
   },
   eventsTitle: {
     marginBottom: 16,
-    color: '#4b5563',
+    fontSize: 16,
+    fontWeight: '600',
   },
   eventItem: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderLeftWidth: 4,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
@@ -255,25 +284,32 @@ const styles = StyleSheet.create({
   },
   eventTime: {
     fontSize: 12,
-    color: '#6b7280',
   },
   eventTitle: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#1f2937',
   },
   noEvents: {
     textAlign: 'center',
     marginTop: 32,
-    color: '#9ca3af',
+    fontSize: 14,
   },
   addButton: {
-    backgroundColor: '#3b82f6',
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 16,
     alignItems: 'center',
     marginTop: 'auto',
-    marginBottom: 32,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   addButtonText: {
     color: '#ffffff',
