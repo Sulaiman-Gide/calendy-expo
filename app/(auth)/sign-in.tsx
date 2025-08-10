@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { supabase } from "../../lib/supabase";
+import CustomToast from "../../components/CustomToast";
 
 const ThemedTextInput = ({ style, placeholder, ...props }: any) => {
   const { colors } = useTheme();
@@ -29,9 +30,27 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">("info");
   const { colors } = useTheme();
 
+  const showToastMessage = (message: string, type: "success" | "error" | "info" = "info") => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
+
+  const hideToast = () => {
+    setShowToast(false);
+  };
+
   const handleSignIn = async () => {
+    if (!email || !password) {
+      showToastMessage("Please enter both email and password", "error");
+      return;
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -42,14 +61,16 @@ export default function SignIn() {
 
       if (error) throw error;
 
-      // Navigate to home after successful sign in
-      router.replace("/(tabs)");
+      // Show success toast before navigation
+      showToastMessage("Successfully signed in!", "success");
+      
+      // Navigate to home after a short delay to show the success message
+      setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 1000);
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during sign in";
+      showToastMessage(errorMessage, "error");
     } finally {
       setLoading(false);
     }
@@ -57,6 +78,13 @@ export default function SignIn() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <CustomToast
+        visible={showToast}
+        message={toastMessage}
+        type={toastType}
+        onHide={hideToast}
+        duration={toastType === 'success' ? 2000 : 4000}
+      />
       <Text style={[styles.title, { color: colors.text }]}>
         Welcome to Calendy
       </Text>

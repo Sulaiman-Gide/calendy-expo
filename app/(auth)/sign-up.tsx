@@ -1,76 +1,183 @@
-import { View, Text, StyleSheet, TextInput, Pressable, Alert } from 'react-native';
-import { Link, router } from 'expo-router';
-import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { Ionicons } from "@expo/vector-icons";
+import { Link, router } from "expo-router";
+import { useState } from "react";
+import {
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
+import CustomToast from "../../components/CustomToast";
+import { useTheme } from "../../context/ThemeContext";
+import { supabase } from "../../lib/supabase";
+
+interface ThemedTextInputProps {
+  style?: StyleProp<ViewStyle>;
+  placeholder?: string;
+  secureTextEntry?: boolean;
+  rightIcon?: string;
+  onRightIconPress?: () => void;
+  [key: string]: any;
+}
+
+const ThemedTextInput = ({
+  style,
+  placeholder,
+  secureTextEntry = false,
+  rightIcon,
+  onRightIconPress,
+  ...props
+}: ThemedTextInputProps) => {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.inputContainer, style as ViewStyle]}>
+      <TextInput
+        style={{
+          ...(styles.input as object),
+          color: colors.text,
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          paddingRight: rightIcon ? 40 : 12,
+          borderWidth: 1,
+          borderRadius: 8,
+          padding: 12,
+          fontSize: 16,
+          width: "100%",
+        }}
+        placeholder={placeholder}
+        placeholderTextColor={colors.text + "80"}
+        secureTextEntry={secureTextEntry}
+        {...props}
+      />
+      {rightIcon && (
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={onRightIconPress}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name={rightIcon as any}
+            size={20}
+            color={colors.text + "80"}
+          />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
 
 export default function SignUp() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">(
+    "info"
+  );
+  const { colors } = useTheme();
+
+  const showToastMessage = (
+    message: string,
+    type: "success" | "error" | "info" = "info"
+  ) => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+  };
+
+  const hideToast = () => {
+    setShowToast(false);
+  };
 
   const handleSignUp = async () => {
-    if (!email || !password || !fullName) {
-      setError('Please fill in all fields');
+    // Validate all fields are filled
+    if (!email || !password || !confirmPassword || !fullName) {
+      showToastMessage("Please fill in all fields", "error");
+      return;
+    }
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      showToastMessage("Passwords do not match", "error");
+      return;
+    }
+
+    // Validate password strength
+    if (password.length < 6) {
+      showToastMessage("Password must be at least 6 characters", "error");
       return;
     }
 
     try {
       setLoading(true);
-      setError('');
-      
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName,
           },
-          emailRedirectTo: 'calendy://auth/callback',
+          emailRedirectTo: `${process.env.EXPO_PUBLIC_APP_URL || "exp://"}`,
         },
       });
 
-      if (signUpError) throw signUpError;
-      
-      Alert.alert(
-        'Check your email',
-        'We\'ve sent you a confirmation email. Please verify your email to continue.',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(auth)/sign-in'),
-          },
-        ]
+      if (error) throw error;
+
+      // Show success toast
+      showToastMessage(
+        "Check your email for the confirmation link!",
+        "success"
       );
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError('An unknown error occurred during sign up');
-      }
+
+      // Navigate to sign-in after a short delay
+      setTimeout(() => {
+        router.replace("/(auth)/sign-in");
+      }, 3000);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred during sign up";
+      showToastMessage(errorMessage, "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Create an account</Text>
-      <Text style={styles.subtitle}>Join Calendy to manage your events</Text>
-      
-      {error ? <Text style={styles.error}>{error}</Text> : null}
-      
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <CustomToast
+        visible={showToast}
+        message={toastMessage}
+        type={toastType}
+        onHide={hideToast}
+        duration={toastType === "success" ? 3000 : 4000}
+      />
+
+      <Text style={[styles.title, { color: colors.text }]}>
+        Create an account
+      </Text>
+      <Text style={[styles.subtitle, { color: colors.text + "CC" }]}>
+        Join Calendy to manage your events
+      </Text>
+
       <View style={styles.form}>
-        <TextInput
-          style={styles.input}
+        <ThemedTextInput
           placeholder="Full Name"
           value={fullName}
           onChangeText={setFullName}
           autoCapitalize="words"
         />
-        <TextInput
-          style={styles.input}
+        <ThemedTextInput
           placeholder="Email"
           value={email}
           onChangeText={setEmail}
@@ -78,28 +185,50 @@ export default function SignUp() {
           keyboardType="email-address"
           autoComplete="email"
         />
-        <TextInput
-          style={styles.input}
+        <ThemedTextInput
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
-          autoComplete="new-password"
+          secureTextEntry={!showPassword}
+          rightIcon={showPassword ? "eye-off" : "eye"}
+          onRightIconPress={() => setShowPassword(!showPassword)}
         />
-        
-        <Pressable 
-          style={[styles.button, loading && styles.buttonDisabled]}
+        <ThemedTextInput
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!showConfirmPassword}
+          rightIcon={showConfirmPassword ? "eye-off" : "eye"}
+          onRightIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+          style={{ marginBottom: 16 }}
+        />
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            {
+              backgroundColor: colors.primary,
+              opacity: pressed ? 0.8 : 1,
+            },
+            loading && styles.buttonDisabled,
+          ]}
           onPress={handleSignUp}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>
-            {loading ? 'Creating account...' : 'Sign Up'}
+          <Text style={[styles.buttonText, { color: "#fff" }]}>
+            {loading ? "Creating Account..." : "Create Account"}
           </Text>
         </Pressable>
-        
+
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <Link href="/(auth)/sign-in" style={styles.link}>Sign in</Link>
+          <Text style={[styles.footerText, { color: colors.text + "CC" }]}>
+            Already have an account?{" "}
+            <Link href="/(auth)/sign-in" asChild>
+              <Text style={[styles.link, { color: colors.primary }]}>
+                Sign In
+              </Text>
+            </Link>
+          </Text>
         </View>
       </View>
     </View>
@@ -110,64 +239,69 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    justifyContent: "center",
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 32,
+    fontWeight: "bold" as const,
     marginBottom: 8,
-    textAlign: 'center',
-    color: '#1a1a1a',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 32,
-    textAlign: 'center',
+    color: "#666",
   },
   form: {
-    width: '100%',
+    gap: 12,
+    width: "100%",
     maxWidth: 400,
-    alignSelf: 'center',
+    alignSelf: "center",
+  },
+  inputContainer: {
+    position: "relative",
+    width: "100%",
   },
   input: {
-    backgroundColor: '#f5f5f5',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 16,
-    fontSize: 16,
+    // Moved inline for type safety
+  },
+  iconContainer: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 40,
   },
   button: {
-    backgroundColor: '#3b82f6',
-    padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
+    padding: 16,
+    alignItems: "center",
     marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
+    width: "100%",
   },
   buttonText: {
-    color: 'white',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
+    marginTop: 20,
+    alignItems: "center",
   },
   footerText: {
-    color: '#666',
+    fontSize: 14,
   },
   link: {
-    color: '#3b82f6',
-    fontWeight: '600',
+    color: "#3b82f6",
+    textDecorationLine: "underline",
+    fontSize: 14,
   },
   error: {
-    color: '#ef4444',
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
+    fontSize: 14,
   },
 });
