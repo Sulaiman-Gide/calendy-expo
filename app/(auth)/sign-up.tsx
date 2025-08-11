@@ -99,19 +99,15 @@ export default function SignUp() {
   };
 
   const handleSignUp = async () => {
-    // Validate all fields are filled
     if (!email || !password || !confirmPassword || !fullName) {
       showToastMessage("Please fill in all fields", "error");
       return;
     }
 
-    // Validate password match
     if (password !== confirmPassword) {
       showToastMessage("Passwords do not match", "error");
       return;
     }
-
-    // Validate password strength
     if (password.length < 6) {
       showToastMessage("Password must be at least 6 characters", "error");
       return;
@@ -132,13 +128,10 @@ export default function SignUp() {
 
       if (error) throw error;
 
-      // Show success toast
       showToastMessage(
         "Check your email for the confirmation link!",
         "success"
       );
-
-      // Navigate to sign-in after a short delay
       setTimeout(() => {
         router.replace("/(auth)/sign-in");
       }, 3000);

@@ -1,9 +1,9 @@
 import { Link, router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import CustomToast from "../../components/CustomToast";
 import { useTheme } from "../../context/ThemeContext";
 import { supabase } from "../../lib/supabase";
-import CustomToast from "../../components/CustomToast";
 
 const ThemedTextInput = ({ style, placeholder, ...props }: any) => {
   const { colors } = useTheme();
@@ -29,13 +29,18 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error" | "info">("info");
+  const [toastType, setToastType] = useState<"success" | "error" | "info">(
+    "info"
+  );
   const { colors } = useTheme();
 
-  const showToastMessage = (message: string, type: "success" | "error" | "info" = "info") => {
+  const showToastMessage = (
+    message: string,
+    type: "success" | "error" | "info" = "info"
+  ) => {
     setToastMessage(message);
     setToastType(type);
     setShowToast(true);
@@ -51,6 +56,45 @@ export default function SignIn() {
       return;
     }
 
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      // Check if email is confirmed
+      if (data.user && !data.user.email_confirmed_at) {
+        // Sign out the user if email is not confirmed
+        await supabase.auth.signOut();
+        showToastMessage(
+          "Please confirm your email before signing in. Check your inbox for the confirmation link.",
+          "error"
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Successful login
+      showToastMessage("Successfully signed in!", "success");
+
+      // Redirect to main app after a short delay
+      setTimeout(() => {
+        router.replace("/(tabs)");
+      }, 1500);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "An unknown error occurred";
+      showToastMessage(errorMessage, "error");
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+
     try {
       setLoading(true);
       setError("");
@@ -61,15 +105,16 @@ export default function SignIn() {
 
       if (error) throw error;
 
-      // Show success toast before navigation
       showToastMessage("Successfully signed in!", "success");
-      
-      // Navigate to home after a short delay to show the success message
+
       setTimeout(() => {
         router.replace("/(tabs)");
       }, 1000);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during sign in";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An unknown error occurred during sign in";
       showToastMessage(errorMessage, "error");
     } finally {
       setLoading(false);
@@ -83,7 +128,7 @@ export default function SignIn() {
         message={toastMessage}
         type={toastType}
         onHide={hideToast}
-        duration={toastType === 'success' ? 2000 : 4000}
+        duration={toastType === "success" ? 2000 : 4000}
       />
       <Text style={[styles.title, { color: colors.text }]}>
         Welcome to Calendy

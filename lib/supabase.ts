@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import { Platform } from "react-native";
 import "react-native-url-polyfill/auto";
 
 // Create a custom AsyncStorage adapter for Supabase
@@ -26,15 +27,36 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// Get the redirect URL based on the platform
+const getRedirectUrl = () => {
+  if (Platform.OS === "web") {
+    return "https://calendy.app/auth/callback";
+  }
+  return "calendy://auth/callback";
+};
+
 // Create and export the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: AsyncStorageAdapter as any,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false, // Disable for React Native
+    detectSessionInUrl: false,
+    flowType: "pkce",
+    debug: __DEV__,
   },
 });
+
+// Function to handle email confirmation
+export const handleEmailConfirmation = async (url: string) => {
+  const { data, error } = await supabase.auth.verifyOtp({
+    type: "email",
+    token_hash: url.split("token_hash=")[1],
+  });
+
+  if (error) throw error;
+  return data;
+};
 
 // Helper function to get the current user
 export const getCurrentUser = async () => {
