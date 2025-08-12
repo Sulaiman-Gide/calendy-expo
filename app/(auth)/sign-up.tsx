@@ -115,23 +115,41 @@ export default function SignUp() {
 
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
+      // First, sign up the user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp(
+        {
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+            },
+            emailRedirectTo: `${process.env.EXPO_PUBLIC_APP_URL || "exp://"}`,
           },
-          emailRedirectTo: `${process.env.EXPO_PUBLIC_APP_URL || "exp://"}`,
-        },
-      });
+        }
+      );
 
-      if (error) throw error;
+      if (signUpError) throw signUpError;
+
+      // Create a profile for the user with onboarded set to false
+      if (authData.user) {
+        const { error: profileError } = await supabase.from("profiles").upsert({
+          id: authData.user.id,
+          full_name: fullName,
+          email: email,
+          onboarded: false,
+          updated_at: new Date().toISOString(),
+        });
+
+        if (profileError) throw profileError;
+      }
 
       showToastMessage(
         "Check your email for the confirmation link!",
         "success"
       );
+
+      // After successful sign-up, redirect to sign-in
       setTimeout(() => {
         router.replace("/(auth)/sign-in");
       }, 3000);

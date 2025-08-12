@@ -1,4 +1,3 @@
-import { Colors } from "@/constants/Colors";
 import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -76,10 +75,10 @@ const OnboardingScreen = () => {
 
   const completeOnboarding = async () => {
     try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+      console.log("Starting onboarding completion...");
+      
+      // Get the current user session
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
 
       if (userError || !user) {
         console.error("Error getting user:", userError);
@@ -87,20 +86,38 @@ const OnboardingScreen = () => {
         return;
       }
 
-      // Mark the user as onboarded in the database
+      console.log("Updating user profile to mark as onboarded...");
+      
+      // Update the user's profile to mark as onboarded
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ onboarded: true })
+        .update({ 
+          onboarded: true,
+          updated_at: new Date().toISOString() 
+        })
         .eq("id", user.id);
 
       if (updateError) {
         console.error("Error updating onboarding status:", updateError);
+        // Still navigate to tabs even if update fails to avoid getting stuck
+        console.log("Falling back to tabs due to update error");
+        router.replace("/(tabs)");
+        return;
       }
 
-      // Navigate to the main app
-      router.replace("/(tabs)");
+      console.log("Profile updated successfully, navigating to tabs...");
+      
+      // Force navigation to tabs with a small delay
+      setTimeout(() => {
+        router.replace({
+          pathname: "/(tabs)",
+          params: { _: Date.now() } // Add timestamp to force navigation
+        });
+      }, 300);
+      
     } catch (error) {
       console.error("Error in onboarding completion:", error);
+      // Always navigate to tabs as a fallback
       router.replace("/(tabs)");
     }
   };
@@ -234,7 +251,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   textContainer: {
-    marginBottom: 50,
+    marginBottom: 30,
   },
   title: {
     fontSize: 38,
@@ -281,18 +298,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeDot: {
-    backgroundColor: Colors.light.tint, // Using the tint color from Colors
+    backgroundColor: "#1b2196",
     width: 24,
   },
   nextButton: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: Colors.light.tint, // Using the tint color from Colors
+    backgroundColor: "#1b2196",
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
-    shadowColor: Colors.light.tint, // Using the tint color from Colors
+    shadowColor: "#1b2196",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

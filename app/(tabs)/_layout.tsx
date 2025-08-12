@@ -1,30 +1,29 @@
-import { Tabs, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { supabase } from '@/lib/supabase';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { HapticTab } from "@/components/HapticTab";
+import { Colors } from "@/constants/Colors";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { useColorScheme } from "@/hooks/useColorScheme";
+import { supabase } from "@/lib/supabase";
+import { Tabs, useRouter } from "expo-router";
+import React, { useEffect } from "react";
+import { Image, Platform, StatusBar, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const router = useRouter();
 
   useEffect(() => {
-    // Check if user is logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        router.replace('/(auth)/sign-in');
+        router.replace("/(auth)/sign-in");
       }
     });
 
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
-        router.replace('/(auth)/sign-in');
+        router.replace("/(auth)/sign-in");
       }
     });
 
@@ -37,42 +36,152 @@ export default function TabLayout() {
 
   return (
     <ThemeProvider>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-          tabBarButton: HapticTab,
-          tabBarBackground: TabBarBackground,
-          tabBarStyle: Platform.select({
-            ios: {
-              // Use a transparent background on iOS to show the blur effect
-              position: 'absolute',
-            },
-            default: {},
-          }),
-        }}>
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Calendar',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar" color={color} />,
-          }}
+      <SafeAreaView
+        style={{
+          flex: 1,
+          backgroundColor: Colors[colorScheme ?? "light"].background,
+        }}
+      >
+        <StatusBar
+          barStyle={colorScheme === "dark" ? "light-content" : "dark-content"}
         />
-        <Tabs.Screen
-          name="upcoming"
-          options={{
-            title: 'Upcoming',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.bullet" color={color} />,
+        <View
+          style={{
+            flex: 1,
+            paddingHorizontal: 16,
+            position: "relative",
           }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: 'Profile',
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.crop.circle" color={color} />,
-          }}
-        />
-      </Tabs>
+        >
+          <Tabs
+            screenOptions={{
+              headerShown: false,
+              tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
+              tabBarInactiveTintColor:
+                Colors[colorScheme ?? "light"].tabIconDefault,
+              tabBarButton: HapticTab,
+              tabBarStyle: {
+                borderTopWidth: 0,
+                backgroundColor: Colors[colorScheme ?? "light"].background,
+                position: "absolute",
+                left: 20,
+                right: 20,
+                bottom: 20,
+                elevation: 3,
+                borderWidth: 1,
+                borderColor: Colors[colorScheme ?? "light"].border,
+                height: Platform.OS === "ios" ? 80 : 70,
+                borderRadius: 15,
+                paddingHorizontal: 10,
+                shadowColor: "#00000050",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+              },
+              tabBarLabelStyle: {
+                fontSize: 13,
+                fontWeight: "600",
+              },
+              tabBarItemStyle: {
+                paddingVertical: 8,
+              },
+            }}
+          >
+            <Tabs.Screen
+              name="index"
+              options={{
+                title: "Calendar",
+                tabBarIcon: ({ color, focused }) => (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 4,
+                    }}
+                  >
+                    <Image
+                      source={
+                        colorScheme === "dark"
+                          ? require("@/assets/images/home-light.png")
+                          : require("@/assets/images/home-black.png")
+                      }
+                      style={{
+                        width: 22,
+                        height: 22,
+                        tintColor: color,
+                        opacity: focused ? 1 : 0.6,
+                        marginBottom: 10,
+                      }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="upcoming"
+              options={{
+                title: "Upcoming",
+                tabBarIcon: ({ color, focused }) => (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 4,
+                    }}
+                  >
+                    <Image
+                      source={
+                        colorScheme === "dark"
+                          ? require("@/assets/images/upcomming-light.png")
+                          : require("@/assets/images/upcomming-black.png")
+                      }
+                      style={{
+                        width: 22,
+                        height: 22,
+                        tintColor: color,
+                        opacity: focused ? 1 : 0.6,
+                        marginBottom: 10,
+                      }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="profile"
+              options={{
+                title: "Profile",
+                tabBarIcon: ({ color, focused }) => (
+                  <View
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 4,
+                    }}
+                  >
+                    <Image
+                      source={
+                        colorScheme === "dark"
+                          ? require("@/assets/images/profile-light.png")
+                          : require("@/assets/images/profile-black.png")
+                      }
+                      style={{
+                        width: 23,
+                        height: 23,
+                        tintColor: color,
+                        opacity: focused ? 1 : 0.6,
+                        marginBottom: 9,
+                      }}
+                      resizeMode="contain"
+                    />
+                  </View>
+                ),
+              }}
+            />
+          </Tabs>
+        </View>
+      </SafeAreaView>
     </ThemeProvider>
   );
 }

@@ -13,6 +13,9 @@ type ThemeContextType = {
     border: string;
     primary: string;
     secondary: string;
+    tint: string;
+    tabIconDefault: string;
+    tabIconSelected: string;
   };
 };
 
@@ -34,6 +37,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       border: '#e5e7eb',
       primary: '#3b82f6',
       secondary: '#6b7280',
+      tint: '#0a7ea4',
+      tabIconDefault: '#687076',
+      tabIconSelected: '#0a7ea4',
     },
     dark: {
       background: '#121212',
@@ -42,6 +48,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       border: '#333333',
       primary: '#60a5fa',
       secondary: '#9ca3af',
+      tint: '#fff',
+      tabIconDefault: '#9BA1A6',
+      tabIconSelected: '#fff',
     },
   };
 

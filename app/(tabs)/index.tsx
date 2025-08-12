@@ -1,34 +1,74 @@
-import { useCallback, useState, useMemo, useContext } from 'react';
-import { StyleSheet, View, FlatList, TouchableOpacity, Platform } from 'react-native';
-import { Calendar, LocaleConfig } from 'react-native-calendars';
-import type { Theme as CalendarTheme } from 'react-native-calendars/src/types';
-import { format, addMonths, subMonths, isToday } from 'date-fns';
-import { parseISO } from 'date-fns/fp';
-import { useFocusEffect } from '@react-navigation/native';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme } from "@/context/ThemeContext";
+import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+import { format } from "date-fns";
+import { parseISO } from "date-fns/fp";
+import { useCallback, useMemo, useState } from "react";
+import {
+  FlatList,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { Calendar, LocaleConfig } from "react-native-calendars";
+import type { Theme as BaseCalendarTheme } from "react-native-calendars/src/types";
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { supabase } from '@/lib/supabase';
-
-// Configure calendar locale
-LocaleConfig.locales['en'] = {
-  monthNames: [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ],
-  monthNamesShort: [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-  ],
-  dayNames: [
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
-  ],
-  dayNamesShort: ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'],
-  today: 'Today'
+// Extend the base CalendarTheme type to include our custom styles
+type CustomCalendarTheme = BaseCalendarTheme & {
+  "stylesheet.calendar.header"?: any;
+  "stylesheet.calendar.main"?: any;
+  "stylesheet.day.basic"?: any;
 };
 
-LocaleConfig.defaultLocale = 'en';
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { supabase } from "@/lib/supabase";
+
+// Configure calendar locale
+LocaleConfig.locales["en"] = {
+  monthNames: [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ],
+  monthNamesShort: [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ],
+  dayNames: [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ],
+  dayNamesShort: ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"],
+  today: "Today",
+};
+
+LocaleConfig.defaultLocale = "en";
 
 type Event = {
   id: string;
@@ -40,7 +80,10 @@ type Event = {
 
 export default function CalendarScreen() {
   const { colors } = useTheme();
-  const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  const router = useRouter();
+  const [selectedDate, setSelectedDate] = useState<string>(
+    format(new Date(), "yyyy-MM-dd")
+  );
   const [events, setEvents] = useState<Event[]>([]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [markedDates, setMarkedDates] = useState({});
@@ -52,20 +95,20 @@ export default function CalendarScreen() {
       setIsLoading(true);
       const startOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
       const endOfMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0);
-      
+
       const { data, error } = await supabase
-        .from('events')
-        .select('*')
-        .gte('start_time', startOfMonth.toISOString())
-        .lte('start_time', endOfMonth.toISOString())
-        .order('start_time', { ascending: true });
+        .from("events")
+        .select("*")
+        .gte("start_time", startOfMonth.toISOString())
+        .lte("start_time", endOfMonth.toISOString())
+        .order("start_time", { ascending: true });
 
       if (error) throw error;
 
       setEvents(data || []);
       updateMarkedDates(data || []);
     } catch (error) {
-      console.error('Error fetching events:', error);
+      console.error("Error fetching events:", error);
     } finally {
       setIsLoading(false);
     }
@@ -74,24 +117,28 @@ export default function CalendarScreen() {
   // Update marked dates for the calendar
   const updateMarkedDates = (eventsList: Event[]) => {
     const marked: any = {};
-    
+
     // Mark today
-    const today = format(new Date(), 'yyyy-MM-dd');
-    marked[today] = { selected: selectedDate === today, selectedColor: '#3b82f6', dotColor: '#3b82f6' };
-    
+    const today = format(new Date(), "yyyy-MM-dd");
+    marked[today] = {
+      selected: selectedDate === today,
+      selectedColor: "#3b82f6",
+      dotColor: "#3b82f6",
+    };
+
     // Mark selected date
     if (selectedDate && selectedDate !== today) {
-      marked[selectedDate] = { selected: true, selectedColor: '#3b82f6' };
+      marked[selectedDate] = { selected: true, selectedColor: "#3b82f6" };
     }
-    
+
     // Mark dates with events
-    eventsList.forEach(event => {
-      const date = event.start_time.split('T')[0];
+    eventsList.forEach((event) => {
+      const date = event.start_time.split("T")[0];
       if (!marked[date]) {
-        marked[date] = { marked: true, dotColor: event.color || '#3b82f6' };
+        marked[date] = { marked: true, dotColor: event.color || "#3b82f6" };
       }
     });
-    
+
     setMarkedDates(marked);
   };
 
@@ -116,89 +163,131 @@ export default function CalendarScreen() {
 
   // Filter events for the selected date
   const filteredEvents = useMemo(() => {
-    return events.filter(event => {
-      const eventDate = event.start_time.split('T')[0];
+    return events.filter((event) => {
+      const eventDate = event.start_time.split("T")[0];
       return eventDate === selectedDate;
     });
   }, [events, selectedDate]);
 
   // Format time for display
   const formatTime = (dateString: string) => {
-    return format(parseISO(dateString), 'h:mm a');
+    return format(parseISO(dateString), "h:mm a");
   };
 
-  // Calendar theme configuration
-  const calendarTheme: Partial<CalendarTheme> = {
-    backgroundColor: colors.background,
-    calendarBackground: colors.background,
-    textSectionTitleColor: colors.primary,
-    selectedDayBackgroundColor: colors.primary,
-    selectedDayTextColor: '#ffffff',
-    todayTextColor: colors.primary,
+  // Calendar theme with custom styles
+  const calendarTheme: CustomCalendarTheme = {
+    backgroundColor: "transparent",
+    calendarBackground: "transparent",
+    textSectionTitleColor: colors.text,
+    selectedDayBackgroundColor: colors.tint,
+    selectedDayTextColor: "#ffffff",
+    todayTextColor: colors.tint,
     dayTextColor: colors.text,
-    textDisabledColor: colors.secondary,
-    dotColor: colors.primary,
-    selectedDotColor: '#ffffff',
-    arrowColor: colors.primary,
+    textDisabledColor: `${colors.text}60`,
+    dotColor: colors.tint,
+    selectedDotColor: "#ffffff",
+    arrowColor: colors.tint,
     monthTextColor: colors.text,
-    textDayFontWeight: '400',
-    textMonthFontWeight: 'bold',
-    textDayHeaderFontWeight: '600',
-    textDayFontSize: 14,
-    textMonthFontSize: 20,
+    textDayFontWeight: "500" as const,
+    textMonthFontWeight: "600" as const,
+    textDayHeaderFontWeight: "500" as const,
+    textDayFontSize: 12,
+    textMonthFontSize: 12,
     textDayHeaderFontSize: 12,
+    "stylesheet.calendar.header": {
+      week: {
+        marginVertical: 14,
+        flexDirection: "row",
+        justifyContent: "space-around",
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border + "40",
+        marginHorizontal: 20,
+      },
+    },
+    "stylesheet.calendar.main": {
+      container: {
+        padding: 0,
+        margin: 0,
+      },
+      monthView: {
+        backgroundColor: "transparent",
+      },
+      week: {
+        marginTop: 5,
+        marginBottom: 5,
+        flexDirection: "row",
+        justifyContent: "space-around",
+      },
+    },
+    "stylesheet.day.basic": {
+      base: {
+        width: 34,
+        height: 34,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 32,
+      },
+    },
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}>
+    <ThemedView style={styles.container}>
       <View style={styles.calendarContainer}>
         <Calendar
-          style={[styles.calendar, { backgroundColor: colors.card }]}
+          style={[styles.calendar, { backgroundColor: "transparent" }]}
           current={selectedDate}
           onDayPress={onDayPress}
           markedDates={markedDates}
           onMonthChange={onMonthChange}
-          hideExtraDays={false}
-          hideDayNames={false}
-          firstDay={1}
           theme={calendarTheme}
-          renderHeader={(date) => (
-            <View style={styles.header}>
-              <ThemedText type="title" style={{ color: colors.text }}>
-                {format(parseISO(selectedDate), 'MMMM yyyy')}
-              </ThemedText>
-            </View>
+          firstDay={1}
+          hideExtraDays={false}
+          enableSwipeMonths={true}
+          hideArrows={false}
+          renderArrow={(direction) => (
+            <ThemedText
+              style={{ color: colors.tint, fontSize: 20, fontWeight: "bold" }}
+            >
+              {direction === "left" ? "‹" : "›"}
+            </ThemedText>
           )}
         />
       </View>
-      
+
       <ThemedView style={styles.eventsContainer}>
-        <ThemedText 
-          type="subtitle" 
+        <ThemedText
+          type="subtitle"
           style={[styles.eventsTitle, { color: colors.text }]}
         >
-          {format(parseISO(selectedDate), 'EEEE, MMMM d, yyyy')}
+          {format(parseISO(selectedDate), "EEEE, MMMM d, yyyy")}
         </ThemedText>
-        
+
         {isLoading ? (
-          <ThemedText style={{ color: colors.text }}>Loading events...</ThemedText>
+          <ThemedText
+            style={{ color: colors.text, textAlign: "center", marginTop: 60 }}
+          >
+            Loading events...
+          </ThemedText>
         ) : filteredEvents.length > 0 ? (
           <FlatList
             data={filteredEvents}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <View 
+              <View
                 style={[
-                  styles.eventItem, 
-                  { 
+                  styles.eventItem,
+                  {
                     backgroundColor: colors.card,
                     borderLeftColor: item.color || colors.primary,
-                    shadowColor: colors.text === '#f5f5f5' ? '#000' : '#000',
-                  }
+                    shadowColor: colors.text === "#f5f5f5" ? "#000" : "#000",
+                  },
                 ]}
               >
                 <View style={styles.eventTimeContainer}>
-                  <ThemedText style={[styles.eventTime, { color: colors.secondary }]}>
+                  <ThemedText
+                    style={[styles.eventTime, { color: colors.secondary }]}
+                  >
                     {formatTime(item.start_time)}
                     {item.end_time && ` - ${formatTime(item.end_time)}`}
                   </ThemedText>
@@ -214,15 +303,14 @@ export default function CalendarScreen() {
             No events for this day
           </ThemedText>
         )}
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[styles.addButton, { backgroundColor: colors.primary }]}
-          onPress={() => console.log('Add event')}
+          onPress={() => router.push("/add-event")}
         >
           <ThemedText style={styles.addButtonText}>+ Add Event</ThemedText>
         </TouchableOpacity>
       </ThemedView>
-      
     </ThemedView>
   );
 }
@@ -230,38 +318,28 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 10,
   },
   calendarContainer: {
-    padding: 16,
-    paddingBottom: 8,
+    backgroundColor: "transparent",
+  },
+  calendar: {
+    borderWidth: 0,
+    backgroundColor: "transparent",
   },
   header: {
     paddingVertical: 10,
     paddingHorizontal: 5,
-  },
-  calendar: {
-    borderRadius: 15,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
   },
   eventsContainer: {
     flex: 1,
     paddingTop: 8,
   },
   eventsTitle: {
+    marginTop: 25,
     marginBottom: 16,
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   eventItem: {
     borderRadius: 12,
@@ -287,33 +365,23 @@ const styles = StyleSheet.create({
   },
   eventTitle: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   noEvents: {
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 32,
     fontSize: 14,
   },
   addButton: {
     borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    padding: 14,
+    alignItems: "center",
+    marginTop: "auto",
+    marginBottom: 110,
   },
   addButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

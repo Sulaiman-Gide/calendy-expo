@@ -79,13 +79,30 @@ export default function SignIn() {
         return;
       }
 
-      // Successful login
+      // Check user's onboarding status
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("onboarded")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        showToastMessage("Error checking your account status", "error");
+        return;
+      }
+
+      // Show success message
       showToastMessage("Successfully signed in!", "success");
 
-      // Redirect to main app after a short delay
+      // Redirect based on onboarding status
       setTimeout(() => {
-        router.replace("/(tabs)");
-      }, 1500);
+        if (profile?.onboarded) {
+          router.replace("/(tabs)");
+        } else {
+          router.replace("/(onboarding)/onboarding");
+        }
+      }, 1000);
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
