@@ -75,10 +75,10 @@ const OnboardingScreen = () => {
 
   const completeOnboarding = async () => {
     try {
-      console.log("Starting onboarding completion...");
-      
-      // Get the current user session
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
 
       if (userError || !user) {
         console.error("Error getting user:", userError);
@@ -86,38 +86,26 @@ const OnboardingScreen = () => {
         return;
       }
 
-      console.log("Updating user profile to mark as onboarded...");
-      
-      // Update the user's profile to mark as onboarded
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ 
+        .update({
           onboarded: true,
-          updated_at: new Date().toISOString() 
+          updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
 
       if (updateError) {
-        console.error("Error updating onboarding status:", updateError);
-        // Still navigate to tabs even if update fails to avoid getting stuck
-        console.log("Falling back to tabs due to update error");
         router.replace("/(tabs)");
         return;
       }
 
-      console.log("Profile updated successfully, navigating to tabs...");
-      
-      // Force navigation to tabs with a small delay
       setTimeout(() => {
         router.replace({
           pathname: "/(tabs)",
-          params: { _: Date.now() } // Add timestamp to force navigation
+          params: { _: Date.now() },
         });
       }, 300);
-      
     } catch (error) {
-      console.error("Error in onboarding completion:", error);
-      // Always navigate to tabs as a fallback
       router.replace("/(tabs)");
     }
   };

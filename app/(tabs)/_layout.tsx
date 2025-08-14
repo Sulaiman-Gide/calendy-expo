@@ -191,6 +191,13 @@ export default function TabLayout() {
                 title: 'Settings',
               }}
             />
+            <Tabs.Screen
+              name="profile/about"
+              options={{
+                href: null,
+                title: 'About',
+              }}
+            />
           </Tabs>
         </View>
       </SafeAreaView>

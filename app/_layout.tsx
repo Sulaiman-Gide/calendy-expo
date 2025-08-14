@@ -30,14 +30,14 @@ function RootLayoutNav() {
   useEffect(() => {
     // Define the deep link handler with proper type
     const handleDeepLink = ({ url }: { url: string }) => {
-      console.log("Handling deep link:", url);
+      //console.log("Handling deep link:", url);
       // Handle the deep link URL as needed
       // The deepLinking.ts will handle most of this, but we log it here for debugging
     };
 
     // Define the URL handler with proper type
     const handleUrl = (event: { url: string }) => {
-      console.log("Handling URL:", event.url);
+      //console.log("Handling URL:", event.url);
       handleDeepLink({ url: event.url });
     };
 
@@ -54,7 +54,7 @@ function RootLayoutNav() {
       try {
         const url = await Linking.getInitialURL();
         if (url) {
-          console.log("App opened with URL:", url);
+          //  console.log("App opened with URL:", url);
           handleDeepLink({ url });
         }
       } catch (error) {
@@ -90,14 +90,14 @@ function RootLayoutNav() {
     // Set up notification listeners
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
-        console.log("Notification received:", notification);
+        //("Notification received:", notification);
       });
 
     // Define the notification response handler with proper types
     const handleNotificationResponse = (
       response: Notifications.NotificationResponse
     ) => {
-      console.log("Notification response received:", response);
+      //console.log("Notification response received:", response);
       const data = response.notification.request.content.data as {
         url?: string;
       };
@@ -120,7 +120,6 @@ function RootLayoutNav() {
         handleNotificationResponse
       );
 
-    // Clean up all listeners on unmount
     return () => {
       if (authSubscription.current) {
         authSubscription.current.data.subscription.unsubscribe();
@@ -139,87 +138,74 @@ function RootLayoutNav() {
   useEffect(() => {
     let isMounted = true;
 
-    const checkAuthAndOnboarding = async () => {
+    const checkAuthAndRedirect = async () => {
+      if (!isMounted) return;
+      
       try {
         // Get current session
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
         if (sessionError) {
-          console.error("Error getting session:", sessionError);
+          console.error('Session error:', sessionError);
           return;
         }
 
         const currentSegment = segments[0];
-        console.log("Current segment:", currentSegment);
-        console.log("Session exists:", !!session);
 
-        // If no session, only allow auth or onboarding screens
+        // If no session, redirect to sign-in if not already there
         if (!session) {
-          if (
-            currentSegment !== "(auth)" &&
-            currentSegment !== "(onboarding)"
-          ) {
-            console.log("No session, redirecting to sign-in");
+          if (currentSegment !== "(auth)" && currentSegment !== "(onboarding)") {
             router.replace("/(auth)/sign-in");
           }
           return;
         }
 
-        // If we have a session, check onboarding status
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("onboarded")
-          .eq("id", session.user.id)
-          .single();
+        try {
+          // If we have a session, check onboarding status
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("onboarded")
+            .eq("id", session.user.id)
+            .single();
 
-        if (profileError) {
-          console.log("Error getting profile:", profileError);
-          return;
-        }
+          if (profileError) {
+            console.error('Profile fetch error:', profileError);
+            return;
+          }
 
-        console.log("Profile onboarded status:", profile?.onboarded);
+          // If not onboarded, go to onboarding
+          if (!profile?.onboarded) {
+            if (currentSegment !== "(onboarding)") {
+              router.replace("/(onboarding)/onboarding");
+            }
+            return;
+          }
 
-        if (currentSegment === "(onboarding)" && profile?.onboarded) {
-          console.log("Already onboarded, redirecting to tabs");
-          router.replace("/(tabs)");
-          return;
-        }
-
-        if (!profile?.onboarded && currentSegment !== "(onboarding)") {
-          console.log("Not onboarded, redirecting to onboarding");
-          router.replace("/(onboarding)/onboarding");
-          return;
-        }
-
-        // If user is onboarded and not on tabs, redirect to tabs
-        if (profile?.onboarded && currentSegment !== "(tabs)") {
-          console.log("Onboarded, redirecting to tabs");
-          router.replace("/(tabs)");
-          return;
+          // If onboarded and in auth/onboarding, go to tabs
+          if (currentSegment === "(auth)" || currentSegment === "(onboarding)") {
+            router.replace("/(tabs)");
+          }
+        } catch (error) {
+          console.error('Error in profile check:', error);
         }
       } catch (error) {
-        console.error("Error in auth check:", error);
+        console.error("Auth error:", error);
       }
     };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
-      await checkAuthAndOnboarding();
+      await checkAuthAndRedirect();
     });
 
     // Initial check
-    checkAuthAndOnboarding();
+    checkAuthAndRedirect();
 
     return () => {
       isMounted = false;
-      subscription.unsubscribe();
+      authListener?.subscription?.unsubscribe();
     };
-  }, [segments]);
+  }, [segments, router]);
 
   return (
     <Stack

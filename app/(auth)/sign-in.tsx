@@ -1,4 +1,4 @@
-import { Link, router } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import CustomToast from "../../components/CustomToast";
@@ -35,6 +35,7 @@ export default function SignIn() {
   const [toastType, setToastType] = useState<"success" | "error" | "info">(
     "info"
   );
+  const router = useRouter();
   const { colors } = useTheme();
 
   const showToastMessage = (
@@ -60,79 +61,28 @@ export default function SignIn() {
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      // Check if email is confirmed
-      if (data.user && !data.user.email_confirmed_at) {
-        // Sign out the user if email is not confirmed
-        await supabase.auth.signOut();
-        showToastMessage(
-          "Please confirm your email before signing in. Check your inbox for the confirmation link.",
-          "error"
-        );
-        setLoading(false);
-        return;
-      }
-
-      // Check user's onboarding status
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("onboarded")
-        .eq("id", data.user.id)
-        .single();
-
-      if (profileError) {
-        console.log("Error fetching profile:", profileError);
-        showToastMessage("Error checking your account status", "error");
-        return;
-      }
-
-      // Show success message
-      showToastMessage("Successfully signed in!", "success");
-
-      // Redirect based on onboarding status
-      setTimeout(() => {
-        if (profile?.onboarded) {
-          router.replace("/(tabs)");
-        } else {
-          router.replace("/(onboarding)/onboarding");
-        }
-      }, 1000);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "An unknown error occurred";
-      showToastMessage(errorMessage, "error");
-      setError(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-
-    try {
-      setLoading(true);
-      setError("");
+      console.log("Trying to login");
+      // Sign in with email and password
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
-
+      if (error) {
+        console.log("Trying to login error");
+        showToastMessage(error.message || "Failed to sign in", "error");
+        return;
+      }
+      console.log("Trying to login sucefull");
       showToastMessage("Successfully signed in!", "success");
+      setLoading(false);
 
-      setTimeout(() => {
-        router.replace("/(tabs)");
-      }, 1000);
+      router.replace("/(tabs)");
     } catch (error: unknown) {
       const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "An unknown error occurred during sign in";
+        error instanceof Error ? error.message : "An unknown error occurred";
       showToastMessage(errorMessage, "error");
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -9,5 +9,5 @@ ADD COLUMN IF NOT EXISTS notification_sent BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS notification_sent_at TIMESTAMPTZ;
 
 -- Create index for faster lookups
-CREATE INDEX IF NOT EXISTS idx_events_notification_status ON events (start_time) 
+CREATE INDEX IF NOT EXISTS idx_events_notification_status ON events (start_date) 
 WHERE notification_sent = false;
