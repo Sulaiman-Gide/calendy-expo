@@ -13,15 +13,6 @@ import {
 import { useTheme } from "../../../context/ThemeContext";
 import { supabase } from "../../../lib/supabase";
 
-// Extend the ThemeColors interface to include textSecondary
-import type { ThemeColors } from "../../../context/ThemeContext";
-
-declare module "../../../context/ThemeContext" {
-  interface ThemeColors {
-    textSecondary: string;
-  }
-}
-
 type UserProfile = {
   id: string;
   full_name: string;
@@ -215,11 +206,13 @@ export default function ProfileScreen() {
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
         <View style={styles.statItem}>
           <Text style={[styles.statNumber, { color: colors.primary }]}>
-            {new Date(profile.created_at).toLocaleDateString('en-US', {
-              day: '2-digit',
-              month: 'long',
-              year: 'numeric'
-            }).replace(/(\d+), (\w+) (\d+)/, '$1-$2-$3')}
+            {new Date(profile.created_at)
+              .toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "long",
+                year: "numeric",
+              })
+              .replace(/(\d+), (\w+) (\d+)/, "$1-$2-$3")}
           </Text>
           <Text style={[styles.statLabel, { color: colors.secondary }]}>
             Member since
