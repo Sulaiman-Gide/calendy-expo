@@ -174,32 +174,35 @@ export default function CalendarScreen() {
     return format(parseISO(dateString), "h:mm a");
   };
 
-  // Calendar theme with custom styles
+  // Calendar theme
   const calendarTheme: CustomCalendarTheme = {
     backgroundColor: "transparent",
     calendarBackground: "transparent",
     textSectionTitleColor: colors.text,
-    selectedDayBackgroundColor: colors.tint,
-    selectedDayTextColor: "#ffffff",
-    todayTextColor: colors.tint,
-    dayTextColor: colors.text,
-    textDisabledColor: `${colors.text}60`,
-    dotColor: colors.tint,
-    selectedDotColor: "#ffffff",
-    arrowColor: colors.tint,
-    monthTextColor: colors.text,
     textDayFontWeight: "500" as const,
     textMonthFontWeight: "600" as const,
     textDayHeaderFontWeight: "500" as const,
-    textDayFontSize: 12,
-    textMonthFontSize: 12,
-    textDayHeaderFontSize: 12,
+    textDayFontSize: 16,
+    textMonthFontSize: 16,
+    textDayHeaderFontSize: 16,
+    dayTextColor: colors.text,
+    textDisabledColor: `${colors.text}60`,
+    todayTextColor: colors.tint,
+    selectedDayBackgroundColor: colors.tint,
+    selectedDayTextColor: "#ffffff",
+    selectedDotColor: "#ffffff",
+    dotColor: colors.tint,
+    arrowColor: colors.tint,
+    monthTextColor: colors.text,
+    textInactiveColor: `${colors.text}80`,
+    textSectionTitleDisabledColor: `${colors.text}60`,
+    todayBackgroundColor: `${colors.tint}20`,
     "stylesheet.calendar.header": {
       week: {
-        marginVertical: 14,
+        marginVertical: 16,
         flexDirection: "row",
         justifyContent: "space-around",
-        paddingBottom: 10,
+        paddingBottom: 14,
         borderBottomWidth: 1,
         borderBottomColor: colors.border + "40",
         marginHorizontal: 20,
@@ -345,8 +348,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    marginTop: 5,
-    marginBottom: 12,
+    marginTop: 6,
+    marginBottom: 14,
     borderLeftWidth: 4,
     ...Platform.select({
       ios: {
@@ -363,7 +366,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   eventTime: {
-    fontSize: 12,
+    fontSize: 13,
   },
   eventTitle: {
     fontSize: 16,
