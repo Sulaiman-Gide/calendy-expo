@@ -1,0 +1,6 @@
+[functions]
+  [functions.send-notifications]
+  # Run every minute to check for upcoming events
+  cron_expr = "* * * * *"
+  # Allow 30 seconds for the function to complete
+  timeout_ms = 30000

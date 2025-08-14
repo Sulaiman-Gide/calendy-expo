@@ -1,8 +1,8 @@
 import { useTheme } from "@/context/ThemeContext";
-import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { format } from "date-fns";
 import { parseISO } from "date-fns/fp";
+import { useRouter } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
@@ -108,7 +108,7 @@ export default function CalendarScreen() {
       setEvents(data || []);
       updateMarkedDates(data || []);
     } catch (error) {
-      console.error("Error fetching events:", error);
+      console.log("Error fetching events:", error);
     } finally {
       setIsLoading(false);
     }
@@ -336,14 +336,16 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   eventsTitle: {
-    marginTop: 25,
+    marginTop: 15,
     marginBottom: 16,
     fontSize: 16,
     fontWeight: "600",
   },
   eventItem: {
     borderRadius: 12,
-    padding: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginTop: 5,
     marginBottom: 12,
     borderLeftWidth: 4,
     ...Platform.select({
@@ -353,7 +355,7 @@ const styles = StyleSheet.create({
         shadowRadius: 2,
       },
       android: {
-        elevation: 2,
+        elevation: 1,
       },
     }),
   },

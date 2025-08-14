@@ -1,9 +1,11 @@
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabase";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { format } from "date-fns";
+import { format, subMinutes } from "date-fns";
 import { useNavigation } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as Notifications from 'expo-notifications';
+import { scheduleNotification } from "@/utils/notifications";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -147,7 +149,22 @@ export default function AddEventScreen() {
 
       if (error) throw error;
 
-      // @ts-ignore
+      // Schedule notification 15 minutes before the event starts
+      const notificationTime = subMinutes(startDate, 15);
+      await scheduleNotification(
+        `Upcoming: ${formData.title}`,
+        formData.description || `Your event is starting soon!`,
+        notificationTime
+      );
+
+      // Also schedule a notification for when the event starts
+      await scheduleNotification(
+        `Event Started: ${formData.title}`,
+        formData.description || `Your event has started!`,
+        startDate
+      );
+
+      Alert.alert("Success", "Event created successfully! Notifications scheduled.");
       navigation.goBack();
     } catch (error) {
       console.error("Error saving event:", error);

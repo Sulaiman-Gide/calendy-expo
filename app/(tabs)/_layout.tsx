@@ -7,6 +7,7 @@ import { Tabs, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { Image, Platform, StatusBar, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -149,26 +150,23 @@ export default function TabLayout() {
               }}
             />
             <Tabs.Screen
-              name="profile"
+              name="profile/index"
               options={{
-                title: "Profile",
+                title: 'Profile',
                 tabBarIcon: ({ color, focused }) => (
-                  <View
-                    style={{
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: 4,
-                    }}
-                  >
+                  <View style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 4,
+                  }}>
                     <Image
-                      source={
-                        colorScheme === "dark"
-                          ? require("@/assets/images/profile-light.png")
-                          : require("@/assets/images/profile-black.png")
+                      source={colorScheme === 'dark' 
+                        ? require('@/assets/images/profile-light.png')
+                        : require('@/assets/images/profile-black.png')
                       }
                       style={{
-                        width: 23,
-                        height: 23,
+                        width: 24,
+                        height: 24,
                         tintColor: color,
                         opacity: focused ? 1 : 0.6,
                         marginBottom: 9,
@@ -177,6 +175,20 @@ export default function TabLayout() {
                     />
                   </View>
                 ),
+              }}
+            />
+            <Tabs.Screen
+              name="profile/edit"
+              options={{
+                href: null,
+                title: 'Edit Profile',
+              }}
+            />
+            <Tabs.Screen
+              name="profile/settings"
+              options={{
+                href: null,
+                title: 'Settings',
               }}
             />
           </Tabs>

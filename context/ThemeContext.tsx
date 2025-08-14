@@ -10,6 +10,7 @@ type ThemeContextType = {
     background: string;
     card: string;
     text: string;
+    textSecondary: string;
     border: string;
     primary: string;
     secondary: string;
@@ -34,6 +35,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       background: '#ffffff',
       card: '#ffffff',
       text: '#1a1a1a',
+      textSecondary: '#6b7280',
       border: '#e5e7eb',
       primary: '#3b82f6',
       secondary: '#6b7280',
@@ -45,6 +47,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       background: '#121212',
       card: '#1e1e1e',
       text: '#f5f5f5',
+      textSecondary: '#9ca3af',
       border: '#333333',
       primary: '#60a5fa',
       secondary: '#9ca3af',

@@ -87,7 +87,7 @@ export default function SignIn() {
         .single();
 
       if (profileError) {
-        console.error("Error fetching profile:", profileError);
+        console.log("Error fetching profile:", profileError);
         showToastMessage("Error checking your account status", "error");
         return;
       }
@@ -222,8 +222,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   form: {
-    width: "100%",
-    maxWidth: 400,
+    gap: 12,
+    width: "98%",
     alignSelf: "center",
   },
   input: {

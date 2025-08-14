@@ -115,7 +115,8 @@ export default function SignUp() {
 
     try {
       setLoading(true);
-      // First, sign up the user
+
+      // Sign up the user with email and password
       const { data: authData, error: signUpError } = await supabase.auth.signUp(
         {
           email,
@@ -129,10 +130,14 @@ export default function SignUp() {
         }
       );
 
-      if (signUpError) throw signUpError;
+      // Check for signup error
+      if (signUpError) {
+        throw signUpError;
+      }
 
-      // Create a profile for the user with onboarded set to false
-      if (authData.user) {
+      // If we get here, signup was successful
+      if (authData?.user) {
+        // Create user profile
         const { error: profileError } = await supabase.from("profiles").upsert({
           id: authData.user.id,
           full_name: fullName,
@@ -141,23 +146,31 @@ export default function SignUp() {
           updated_at: new Date().toISOString(),
         });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.log("Profile creation error:", profileError);
+        }
+
+        showToastMessage(
+          "Check your email for the confirmation link!",
+          "success"
+        );
+
+        // Redirect to sign-in after a delay
+        setTimeout(() => {
+          router.replace("/(auth)/sign-in");
+        }, 3000);
+      } else {
+        throw new Error("User creation failed - no user data returned");
       }
-
-      showToastMessage(
-        "Check your email for the confirmation link!",
-        "success"
-      );
-
-      // After successful sign-up, redirect to sign-in
-      setTimeout(() => {
-        router.replace("/(auth)/sign-in");
-      }, 3000);
     } catch (error) {
+      console.error("Signup error:", error);
       const errorMessage =
         error instanceof Error
-          ? error.message
+          ? error.message.includes("User already registered")
+            ? "This email is already registered. Please sign in."
+            : error.message
           : "An unknown error occurred during sign up";
+
       showToastMessage(errorMessage, "error");
     } finally {
       setLoading(false);
@@ -264,8 +277,7 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 12,
-    width: "100%",
-    maxWidth: 400,
+    width: "98%",
     alignSelf: "center",
   },
   inputContainer: {
