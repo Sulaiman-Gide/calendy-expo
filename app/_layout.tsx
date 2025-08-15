@@ -19,25 +19,16 @@ function RootLayoutNav() {
   const theme = themeContext?.theme || "light";
   const isDark = theme === "dark";
 
-  // Refs for notification listeners
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
   const authSubscription = useRef<{
     data: { subscription: Subscription };
   } | null>(null);
 
-  // Handle deep links
   useEffect(() => {
-    // Define the deep link handler with proper type
-    const handleDeepLink = ({ url }: { url: string }) => {
-      //console.log("Handling deep link:", url);
-      // Handle the deep link URL as needed
-      // The deepLinking.ts will handle most of this, but we log it here for debugging
-    };
+    const handleDeepLink = ({ url }: { url: string }) => {};
 
-    // Define the URL handler with proper type
     const handleUrl = (event: { url: string }) => {
-      //console.log("Handling URL:", event.url);
       handleDeepLink({ url: event.url });
     };
 
@@ -109,7 +100,7 @@ function RootLayoutNav() {
           router.push({ pathname: "/", params: { url } });
         } else {
           // Handle internal app navigation
-          router.push(url as any); // Type assertion as a last resort
+          router.push(url as any);
         }
       }
     };
@@ -134,78 +125,6 @@ function RootLayoutNav() {
       }
     };
   }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const checkAuthAndRedirect = async () => {
-      if (!isMounted) return;
-      
-      try {
-        // Get current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          return;
-        }
-
-        const currentSegment = segments[0];
-
-        // If no session, redirect to sign-in if not already there
-        if (!session) {
-          if (currentSegment !== "(auth)" && currentSegment !== "(onboarding)") {
-            router.replace("/(auth)/sign-in");
-          }
-          return;
-        }
-
-        try {
-          // If we have a session, check onboarding status
-          const { data: profile, error: profileError } = await supabase
-            .from("profiles")
-            .select("onboarded")
-            .eq("id", session.user.id)
-            .single();
-
-          if (profileError) {
-            console.error('Profile fetch error:', profileError);
-            return;
-          }
-
-          // If not onboarded, go to onboarding
-          if (!profile?.onboarded) {
-            if (currentSegment !== "(onboarding)") {
-              router.replace("/(onboarding)/onboarding");
-            }
-            return;
-          }
-
-          // If onboarded and in auth/onboarding, go to tabs
-          if (currentSegment === "(auth)" || currentSegment === "(onboarding)") {
-            router.replace("/(tabs)");
-          }
-        } catch (error) {
-          console.error('Error in profile check:', error);
-        }
-      } catch (error) {
-        console.error("Auth error:", error);
-      }
-    };
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-      await checkAuthAndRedirect();
-    });
-
-    // Initial check
-    checkAuthAndRedirect();
-
-    return () => {
-      isMounted = false;
-      authListener?.subscription?.unsubscribe();
-    };
-  }, [segments, router]);
 
   return (
     <Stack

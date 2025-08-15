@@ -1,5 +1,6 @@
+import { MaterialIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import CustomToast from "../../components/CustomToast";
 import { useTheme } from "../../context/ThemeContext";
@@ -28,6 +29,7 @@ const ThemedTextInput = ({ style, placeholder, ...props }: any) => {
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
@@ -35,6 +37,21 @@ export default function SignIn() {
   const [toastType, setToastType] = useState<"success" | "error" | "info">(
     "info"
   );
+
+  // Password validation rules
+  const passwordValidation = useMemo(() => {
+    return {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+  }, [password]);
+
+  const isPasswordValid = useMemo(() => {
+    return Object.values(passwordValidation).every(Boolean);
+  }, [passwordValidation]);
   const router = useRouter();
   const { colors } = useTheme();
 
@@ -57,6 +74,14 @@ export default function SignIn() {
       return;
     }
 
+    if (!isPasswordValid) {
+      showToastMessage(
+        "Please ensure your password meets all requirements",
+        "error"
+      );
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -73,7 +98,7 @@ export default function SignIn() {
         showToastMessage(error.message || "Failed to sign in", "error");
         return;
       }
-      console.log("Trying to login sucefull");
+
       showToastMessage("Successfully signed in!", "success");
       setLoading(false);
 
@@ -116,21 +141,74 @@ export default function SignIn() {
           autoCapitalize="none"
           keyboardType="email-address"
         />
-        <ThemedTextInput
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.passwordContainer}>
+          <ThemedTextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            style={{ flex: 1 }}
+          />
+          <Pressable
+            style={styles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <MaterialIcons
+              name={showPassword ? "visibility-off" : "visibility"}
+              size={24}
+              color={colors.text + "80"}
+            />
+          </Pressable>
+        </View>
+
+        <View style={styles.validationContainer}>
+          <Text
+            style={[
+              styles.validationText,
+              { color: colors.text + "CC", marginBottom: 8 },
+            ]}
+          >
+            Password must contain:
+          </Text>
+
+          <ValidationItem
+            isValid={passwordValidation.minLength}
+            text="At least 8 characters"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasUpperCase}
+            text="At least one uppercase letter"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasLowerCase}
+            text="At least one lowercase letter"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasNumber}
+            text="At least one number"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasSpecialChar}
+            text="At least one special character"
+            colors={colors}
+          />
+        </View>
 
         <Pressable
           style={[
             styles.button,
-            { backgroundColor: colors.primary },
-            loading && styles.buttonDisabled,
+            {
+              backgroundColor:
+                isPasswordValid && !loading ? colors.primary : colors.border,
+              opacity: !isPasswordValid || loading ? 0.6 : 1,
+            },
           ]}
           onPress={handleSignIn}
-          disabled={loading}
+          disabled={!isPasswordValid || loading}
         >
           <Text style={styles.buttonText}>
             {loading ? "Signing in..." : "Sign In"}
@@ -153,6 +231,36 @@ export default function SignIn() {
     </View>
   );
 }
+
+// Validation Item Component
+const ValidationItem = ({
+  isValid,
+  text,
+  colors,
+}: {
+  isValid: boolean;
+  text: string;
+  colors: any;
+}) => (
+  <View style={styles.validationItem}>
+    <MaterialIcons
+      name={isValid ? "check-circle" : "radio-button-unchecked"}
+      size={16}
+      color={isValid ? "#4CAF50" : colors.text + "80"}
+    />
+    <Text
+      style={[
+        styles.validationText,
+        {
+          color: isValid ? "#4CAF50" : colors.text + "80",
+          textDecorationLine: isValid ? "none" : "line-through",
+        },
+      ]}
+    >
+      {text}
+    </Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -217,5 +325,30 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: "center",
     fontSize: 14,
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 16,
+    padding: 8,
+  },
+  validationContainer: {
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  validationItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+  },
+  validationText: {
+    marginLeft: 8,
+    fontSize: 13,
   },
 });

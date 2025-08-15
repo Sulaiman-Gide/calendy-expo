@@ -73,14 +73,14 @@ export default function AboutScreen() {
         </Text>
         <View style={styles.developerInfo}>
           <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={styles.avatarText}>SG</Text>
+            <Text style={styles.avatarText}>MN</Text>
           </View>
           <View>
             <Text style={[styles.developerName, { color: colors.text }]}>
               Sulaiman Ibrahim Gide
             </Text>
             <Text style={[styles.developerRole, { color: colors.secondary }]}>
-              Full Stack Developer
+              Mobolie App Developer
             </Text>
           </View>
         </View>
@@ -102,11 +102,11 @@ export default function AboutScreen() {
 
         <TouchableOpacity
           style={styles.contactItem}
-          onPress={() => openLink("mailto:sulaiman@example.com")}
+          onPress={() => openLink("mailto:sulaiman@gmail.com")}
         >
           <Ionicons name="mail-outline" size={20} color={colors.primary} />
           <Text style={[styles.contactText, { color: colors.text }]}>
-            sulaiman@example.com
+            sulaiman@gmail.com
           </Text>
         </TouchableOpacity>
 
