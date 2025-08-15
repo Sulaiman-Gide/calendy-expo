@@ -1,6 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Pressable,
   StyleProp,
@@ -85,6 +85,23 @@ export default function SignUp() {
   );
   const { colors } = useTheme();
 
+  // Password validation rules
+  const passwordValidation = useMemo(() => {
+    return {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumber: /[0-9]/.test(password),
+      hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    };
+  }, [password]);
+
+  const isPasswordValid = useMemo(() => {
+    return Object.values(passwordValidation).every(Boolean);
+  }, [passwordValidation]);
+
+  const passwordsMatch = password === confirmPassword;
+
   const showToastMessage = (
     message: string,
     type: "success" | "error" | "info" = "info"
@@ -104,12 +121,16 @@ export default function SignUp() {
       return;
     }
 
-    if (password !== confirmPassword) {
-      showToastMessage("Passwords do not match", "error");
+    if (!isPasswordValid) {
+      showToastMessage(
+        "Please ensure your password meets all requirements",
+        "error"
+      );
       return;
     }
-    if (password.length < 6) {
-      showToastMessage("Password must be at least 6 characters", "error");
+
+    if (!passwordsMatch) {
+      showToastMessage("Passwords do not match", "error");
       return;
     }
 
@@ -209,14 +230,54 @@ export default function SignUp() {
           keyboardType="email-address"
           autoComplete="email"
         />
-        <ThemedTextInput
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          rightIcon={showPassword ? "eye-off" : "eye"}
-          onRightIconPress={() => setShowPassword(!showPassword)}
-        />
+        <View style={styles.passwordContainer}>
+          <ThemedTextInput
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            rightIcon={showPassword ? "eye-off" : "eye"}
+            onRightIconPress={() => setShowPassword(!showPassword)}
+            style={{ marginBottom: 0 }}
+          />
+        </View>
+
+        <View style={styles.validationContainer}>
+          <Text
+            style={[
+              styles.validationText,
+              { color: colors.text + "CC", marginBottom: 8 },
+            ]}
+          >
+            Password must contain:
+          </Text>
+          <ValidationItem
+            isValid={passwordValidation.minLength}
+            text="At least 8 characters"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasUpperCase}
+            text="At least one uppercase letter"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasLowerCase}
+            text="At least one lowercase letter"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasNumber}
+            text="At least one number"
+            colors={colors}
+          />
+          <ValidationItem
+            isValid={passwordValidation.hasSpecialChar}
+            text="At least one special character"
+            colors={colors}
+          />
+        </View>
+
         <ThemedTextInput
           placeholder="Confirm Password"
           value={confirmPassword}
@@ -227,17 +288,30 @@ export default function SignUp() {
           style={{ marginBottom: 16 }}
         />
 
+        {!passwordsMatch && confirmPassword ? (
+          <Text style={[styles.errorText, { color: "red" }]}>
+            Passwords do not match
+          </Text>
+        ) : null}
+
         <Pressable
           style={({ pressed }) => [
             styles.button,
             {
-              backgroundColor: colors.primary,
-              opacity: pressed ? 0.8 : 1,
+              backgroundColor:
+                isPasswordValid && passwordsMatch && !loading
+                  ? colors.primary
+                  : colors.border,
+              opacity:
+                !isPasswordValid || !passwordsMatch || loading
+                  ? 0.6
+                  : pressed
+                  ? 0.8
+                  : 1,
             },
-            loading && styles.buttonDisabled,
           ]}
           onPress={handleSignUp}
-          disabled={loading}
+          disabled={!isPasswordValid || !passwordsMatch || loading}
         >
           <Text style={[styles.buttonText, { color: "#fff" }]}>
             {loading ? "Creating Account..." : "Create Account"}
@@ -258,6 +332,36 @@ export default function SignUp() {
     </View>
   );
 }
+
+// Validation Item Component
+const ValidationItem = ({
+  isValid,
+  text,
+  colors,
+}: {
+  isValid: boolean;
+  text: string;
+  colors: any;
+}) => (
+  <View style={styles.validationItem}>
+    <MaterialIcons
+      name={isValid ? "check-circle" : "radio-button-unchecked"}
+      size={16}
+      color={isValid ? "#4CAF50" : colors.text + "80"}
+    />
+    <Text
+      style={[
+        styles.validationText,
+        {
+          color: isValid ? "#4CAF50" : colors.text + "80",
+          textDecorationLine: isValid ? "none" : "line-through",
+        },
+      ]}
+    >
+      {text}
+    </Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
   container: {
@@ -286,6 +390,34 @@ const styles = StyleSheet.create({
   },
   input: {
     // Moved inline for type safety
+  },
+  passwordContainer: {
+    position: "relative",
+    width: "100%",
+    marginBottom: 16,
+  },
+  validationContainer: {
+    marginTop: 8,
+    marginBottom: 16,
+    padding: 8,
+    backgroundColor: "rgba(0,0,0,0.03)",
+    borderRadius: 8,
+  },
+  validationItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 2,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+  },
+  validationText: {
+    marginLeft: 8,
+    fontSize: 13,
+  },
+  errorText: {
+    marginTop: -8,
+    marginBottom: 12,
+    fontSize: 13,
   },
   iconContainer: {
     position: "absolute",

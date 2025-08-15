@@ -1,7 +1,8 @@
 import { useTheme } from "@/context/ThemeContext";
 import { supabase } from "@/lib/supabase";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -25,7 +26,11 @@ export default function EditProfileScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [form, setForm] = useState<ProfileForm>({
     full_name: "",
     email: "",
@@ -33,7 +38,6 @@ export default function EditProfileScreen() {
     newPassword: "",
     confirmPassword: "",
   });
-  const [passwordError, setPasswordError] = useState("");
 
   useEffect(() => {
     fetchProfile();
@@ -75,6 +79,25 @@ export default function EditProfileScreen() {
     }));
   };
 
+  const passwordValidation = useMemo(() => ({
+    minLength: form.newPassword.length >= 8,
+    hasUpperCase: /[A-Z]/.test(form.newPassword),
+    hasLowerCase: /[a-z]/.test(form.newPassword),
+    hasNumber: /[0-9]/.test(form.newPassword),
+    hasSpecialChar: /[!@#$%^&*(),.?\":{}|<>]/.test(form.newPassword),
+    passwordsMatch: form.newPassword === form.confirmPassword,
+  }), [form.newPassword, form.confirmPassword]);
+
+  const isNewPasswordValid = useMemo(() => {
+    return (
+      passwordValidation.minLength &&
+      passwordValidation.hasUpperCase &&
+      passwordValidation.hasLowerCase &&
+      passwordValidation.hasNumber &&
+      passwordValidation.hasSpecialChar
+    );
+  }, [form.newPassword]);
+
   const validatePassword = () => {
     if (!form.currentPassword) {
       setPasswordError("Current password is required");
@@ -84,11 +107,11 @@ export default function EditProfileScreen() {
       setPasswordError("New password is required");
       return false;
     }
-    if (form.newPassword.length < 6) {
-      setPasswordError("Password must be at least 6 characters");
+    if (!isNewPasswordValid) {
+      setPasswordError("Please ensure your password meets all requirements");
       return false;
     }
-    if (form.newPassword !== form.confirmPassword) {
+    if (!passwordValidation.passwordsMatch) {
       setPasswordError("Passwords do not match");
       return false;
     }
@@ -287,69 +310,291 @@ export default function EditProfileScreen() {
           <Text style={[styles.label, { color: colors.text }]}>
             Current Password
           </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.card,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
-            value={form.currentPassword}
-            onChangeText={(text) => handleChange("currentPassword", text)}
-            placeholder="Current Password"
-            placeholderTextColor={colors.text + "80"}
-            secureTextEntry
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.card,
+                  color: colors.text,
+                  borderColor: colors.border,
+                  paddingRight: 40,
+                },
+              ]}
+              value={form.currentPassword}
+              onChangeText={(text) => handleChange("currentPassword", text)}
+              placeholder="Enter current password"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry={!showCurrentPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowCurrentPassword(!showCurrentPassword)}
+            >
+              <Ionicons
+                name={showCurrentPassword ? "eye-off" : "eye"}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.text }]}>
             New Password
           </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.card,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
-            value={form.newPassword}
-            onChangeText={(text) => handleChange("newPassword", text)}
-            placeholder="New Password (leave blank to keep current)"
-            placeholderTextColor={colors.text + "80"}
-            secureTextEntry
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.card,
+                  color: colors.text,
+                  borderColor: colors.border,
+                  paddingRight: 40,
+                },
+              ]}
+              value={form.newPassword}
+              onChangeText={(text) => handleChange("newPassword", text)}
+              placeholder="Enter new password"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry={!showNewPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowNewPassword(!showNewPassword)}
+            >
+              <Ionicons
+                name={showNewPassword ? "eye-off" : "eye"}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.text }]}>
             Confirm New Password
           </Text>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: colors.card,
-                color: colors.text,
-                borderColor: colors.border,
-              },
-            ]}
-            value={form.confirmPassword}
-            onChangeText={(text) => handleChange("confirmPassword", text)}
-            placeholder="Confirm New Password"
-            placeholderTextColor={colors.text + "80"}
-            secureTextEntry
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: colors.card,
+                  color: colors.text,
+                  borderColor: colors.border,
+                  paddingRight: 40,
+                },
+              ]}
+              value={form.confirmPassword}
+              onChangeText={(text) => handleChange("confirmPassword", text)}
+              placeholder="Confirm new password"
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry={!showConfirmPassword}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Ionicons
+                name={showConfirmPassword ? "eye-off" : "eye"}
+                size={20}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {passwordError ? (
-          <Text style={[styles.errorText, { color: "red" }]}>
-            {passwordError}
-          </Text>
+        {form.newPassword &&
+        (!isNewPasswordValid || !passwordValidation.passwordsMatch) ? (
+          <View
+            style={[
+              styles.validationContainer,
+              {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderWidth: 1,
+                borderRadius: 8,
+                padding: 12,
+                marginTop: 8,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.validationText,
+                { color: colors.text + "CC", marginBottom: 8 },
+              ]}
+            >
+              Password must contain:
+            </Text>
+            <View style={styles.validationItem}>
+              <Ionicons
+                name={
+                  passwordValidation.minLength
+                    ? "checkmark-circle"
+                    : "ellipse-outline"
+                }
+                size={16}
+                color={
+                  passwordValidation.minLength
+                    ? "#4CAF50"
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.validationText,
+                  {
+                    color: passwordValidation.minLength
+                      ? "#4CAF50"
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                At least 8 characters
+              </Text>
+            </View>
+            <View style={styles.validationItem}>
+              <Ionicons
+                name={
+                  passwordValidation.hasUpperCase
+                    ? "checkmark-circle"
+                    : "ellipse-outline"
+                }
+                size={16}
+                color={
+                  passwordValidation.hasUpperCase
+                    ? "#4CAF50"
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.validationText,
+                  {
+                    color: passwordValidation.hasUpperCase
+                      ? "#4CAF50"
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                At least one uppercase letter
+              </Text>
+            </View>
+            <View style={styles.validationItem}>
+              <Ionicons
+                name={
+                  passwordValidation.hasLowerCase
+                    ? "checkmark-circle"
+                    : "ellipse-outline"
+                }
+                size={16}
+                color={
+                  passwordValidation.hasLowerCase
+                    ? "#4CAF50"
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.validationText,
+                  {
+                    color: passwordValidation.hasLowerCase
+                      ? "#4CAF50"
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                At least one lowercase letter
+              </Text>
+            </View>
+            <View style={styles.validationItem}>
+              <Ionicons
+                name={
+                  passwordValidation.hasNumber
+                    ? "checkmark-circle"
+                    : "ellipse-outline"
+                }
+                size={16}
+                color={
+                  passwordValidation.hasNumber
+                    ? "#4CAF50"
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.validationText,
+                  {
+                    color: passwordValidation.hasNumber
+                      ? "#4CAF50"
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                At least one number
+              </Text>
+            </View>
+            <View style={styles.validationItem}>
+              <Ionicons
+                name={
+                  passwordValidation.hasSpecialChar
+                    ? "checkmark-circle"
+                    : "ellipse-outline"
+                }
+                size={16}
+                color={
+                  passwordValidation.hasSpecialChar
+                    ? "#4CAF50"
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.validationText,
+                  {
+                    color: passwordValidation.hasSpecialChar
+                      ? "#4CAF50"
+                      : colors.textSecondary,
+                  },
+                ]}
+              >
+                At least one special character
+              </Text>
+            </View>
+            <View style={[styles.validationItem, { marginTop: 8 }]}>
+              <Ionicons
+                name={
+                  passwordValidation.passwordsMatch && form.confirmPassword
+                    ? "checkmark-circle"
+                    : "ellipse-outline"
+                }
+                size={16}
+                color={
+                  passwordValidation.passwordsMatch && form.confirmPassword
+                    ? "#4CAF50"
+                    : colors.textSecondary
+                }
+              />
+              <Text
+                style={[
+                  styles.validationText,
+                  {
+                    color:
+                      passwordValidation.passwordsMatch && form.confirmPassword
+                        ? "#4F46E5"
+                        : colors.textSecondary,
+                  },
+                ]}
+              >
+                Passwords match
+              </Text>
+            </View>
+          </View>
         ) : null}
 
         <TouchableOpacity
@@ -385,8 +630,43 @@ const styles = StyleSheet.create({
   },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 14, fontWeight: "600", marginBottom: 8 },
-  input: { borderWidth: 1, borderRadius: 8, padding: 12, fontSize: 16 },
-  button: { marginTop: 24, padding: 16, borderRadius: 8, alignItems: "center" },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 0,
+    flex: 1,
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderRadius: 8,
+    borderColor: "#e5e7eb",
+    marginBottom: 16,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: 12,
+    padding: 8,
+  },
+  validationContainer: {
+    marginBottom: 16,
+    padding: 8,
+    borderRadius: 8,
+  },
+  validationItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 2,
+    paddingVertical: 2,
+  },
+  validationText: {
+    marginLeft: 8,
+    fontSize: 13,
+  },
+  button: { padding: 16, borderRadius: 8, alignItems: "center" },
   buttonText: { color: "white", fontWeight: "600", fontSize: 16 },
   errorText: { fontSize: 14, color: "red", marginTop: 4, marginBottom: 8 },
 });
