@@ -1,11 +1,13 @@
+import { WeatherDisplay } from "@/components/WeatherDisplay";
 import { useTheme } from "@/context/ThemeContext";
 import { useFocusEffect } from "@react-navigation/native";
 import { format } from "date-fns";
 import { parseISO } from "date-fns/fp";
 import { useRouter } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   FlatList,
+  PermissionsAndroid,
   Platform,
   StyleSheet,
   TouchableOpacity,
@@ -234,8 +236,39 @@ export default function CalendarScreen() {
     },
   };
 
+  // Request location permission on Android
+  useEffect(() => {
+    const requestLocationPermission = async () => {
+      if (Platform.OS === "android") {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: "Location Permission",
+              message:
+                "This app needs access to your location to show local weather.",
+              buttonNeutral: "Ask Me Later",
+              buttonNegative: "Cancel",
+              buttonPositive: "OK",
+            }
+          );
+          if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+            console.log("Location permission denied");
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+    };
+
+    requestLocationPermission();
+  }, []);
+
   return (
     <ThemedView style={styles.container}>
+      <View style={styles.weatherContainer}>
+        <WeatherDisplay />
+      </View>
       <View style={styles.calendarContainer}>
         <Calendar
           style={[styles.calendar, { backgroundColor: "transparent" }]}
@@ -321,7 +354,11 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 10,
+  },
+  weatherContainer: {
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   calendarContainer: {
     backgroundColor: "transparent",

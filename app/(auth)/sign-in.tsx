@@ -334,6 +334,7 @@ const styles = StyleSheet.create({
   eyeIcon: {
     position: "absolute",
     right: 16,
+    top: 5,
     padding: 8,
   },
   validationContainer: {
