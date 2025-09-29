@@ -1,4 +1,3 @@
-import { supabase } from "@/lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -74,40 +73,8 @@ const OnboardingScreen = () => {
   };
 
   const completeOnboarding = async () => {
-    try {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError || !user) {
-        console.error("Error getting user:", userError);
-        router.replace("/(auth)/sign-in");
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({
-          onboarded: true,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-
-      if (updateError) {
-        router.replace("/(tabs)");
-        return;
-      }
-
-      setTimeout(() => {
-        router.replace({
-          pathname: "/(tabs)",
-          params: { _: Date.now() },
-        });
-      }, 300);
-    } catch (error) {
-      router.replace("/(tabs)");
-    }
+    // Always go to sign-in after onboarding
+    router.replace("/(auth)/sign-in");
   };
 
   const SlideContent = ({

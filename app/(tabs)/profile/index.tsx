@@ -43,7 +43,7 @@ export default function ProfileScreen() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.replace("/(auth)/sign-in");
+        router.replace("/(onboarding)/onboarding");
         return;
       }
 
@@ -115,7 +115,7 @@ export default function ProfileScreen() {
       }
 
       router.replace({
-        pathname: "/(auth)/sign-in",
+        pathname: "/(onboarding)/onboarding",
         params: { signedOut: "true" },
       });
     } catch (error) {

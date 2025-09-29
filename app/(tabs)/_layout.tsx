@@ -7,7 +7,6 @@ import { Tabs, useRouter } from "expo-router";
 import React, { useEffect } from "react";
 import { Image, Platform, StatusBar, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -16,7 +15,7 @@ export default function TabLayout() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        router.replace("/(auth)/sign-in");
+        router.replace("/(onboarding)/onboarding");
       }
     });
 
@@ -24,7 +23,7 @@ export default function TabLayout() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
-        router.replace("/(auth)/sign-in");
+        router.replace("/(onboarding)/onboarding");
       }
     });
 
@@ -152,17 +151,20 @@ export default function TabLayout() {
             <Tabs.Screen
               name="profile/index"
               options={{
-                title: 'Profile',
+                title: "Profile",
                 tabBarIcon: ({ color, focused }) => (
-                  <View style={{
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: 4,
-                  }}>
+                  <View
+                    style={{
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: 4,
+                    }}
+                  >
                     <Image
-                      source={colorScheme === 'dark' 
-                        ? require('@/assets/images/profile-light.png')
-                        : require('@/assets/images/profile-black.png')
+                      source={
+                        colorScheme === "dark"
+                          ? require("@/assets/images/profile-light.png")
+                          : require("@/assets/images/profile-black.png")
                       }
                       style={{
                         width: 24,
@@ -181,21 +183,21 @@ export default function TabLayout() {
               name="profile/edit"
               options={{
                 href: null,
-                title: 'Edit Profile',
+                title: "Edit Profile",
               }}
             />
             <Tabs.Screen
               name="profile/settings"
               options={{
                 href: null,
-                title: 'Settings',
+                title: "Settings",
               }}
             />
             <Tabs.Screen
               name="profile/about"
               options={{
                 href: null,
-                title: 'About',
+                title: "About",
               }}
             />
           </Tabs>
